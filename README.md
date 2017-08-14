@@ -1,4 +1,6 @@
 
+##用于hyperleger/fabric1.0.1源码的学习
+
 **Note:** This is a **read-only mirror** of the formal [Gerrit](https://gerrit.hyperledger.org/r/#/admin/projects/fabric) repository,
 where active development is ongoing. Issue tracking is handled in [Jira](https://jira.hyperledger.org/secure/RapidBoard.jspa?projectKey=FAB&rapidView=5&view=planning)
 
@@ -35,7 +37,7 @@ information on getting started using and developing with the fabric, SDK and cha
 It's recommended for first-time users to begin by going through the
 [Getting Started](http://hyperledger-fabric.readthedocs.io/en/latest/getting_started.html)
 section of the documentation in order to gain familiarity with the Hyperledger
-Fabric components and the basic transaction flow. 
+Fabric components and the basic transaction flow.
 
 ## Contributing
 
