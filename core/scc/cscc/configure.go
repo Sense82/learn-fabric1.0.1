@@ -38,17 +38,28 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 )
-
+// 配置系统chaincode（CSCC），主要负责处理所有的配置相关的事务
+// CSCC检查创世区块，包括检查区块中的配置交易的背书
 // PeerConfiger implements the configuration handler for the peer. For every
 // configuration transaction coming in from the ordering service, the
 // committer calls this system chaincode to process the transaction.
+/*
+type policyChecker struct {
+	channelPolicyManagerGetter policies.ChannelPolicyManagerGetter
+	localMSP                   msp.IdentityDeserializer
+	principalGetter            mgmt.MSPPrincipalGetter
+}
+*/
+// 定义结构体
 type PeerConfiger struct {
 	policyChecker policy.PolicyChecker
 }
 
+// 创建cscc的日志对象
 var cnflogger = flogging.MustGetLogger("cscc")
 
 // These are function names from Invoke first parameter
+// 定义常量，不可修改
 const (
 	JoinChain      string = "JoinChain"
 	GetConfigBlock string = "GetConfigBlock"
@@ -58,17 +69,24 @@ const (
 // Init is called once per chain when the chain is created.
 // This allows the chaincode to initialize any variables on the ledger prior
 // to any transaction execution on the chain.
+// 链码初始化函数，实现Init接口，只调用一次
 func (e *PeerConfiger) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	cnflogger.Info("Init CSCC")
 
 	// Init policy checker for access control
+	// NewChannelPolicyManagerGetter returns a new instance of ChannelPolicyManagerGetter
+
+	// MSP is the minimal Membership Service Provider Interface to be implemented
+	// to accommodate peer functionality
+	//NewLocalMSPPrincipalGetter返回一个obj，
+	//该obj实现Get(role string) (*msp.MSPPrincipal, error)，即根据role返回成员管理策略
 	e.policyChecker = policy.NewPolicyChecker(
 		peer.NewChannelPolicyManagerGetter(),
 		mgmt.GetLocalMSP(),
 		mgmt.NewLocalMSPPrincipalGetter(),
 	)
 
-	return shim.Success(nil)
+	return shim.Success(nil) //返回一个response，状态为OK，内容为nil
 }
 
 // Invoke is called for the following:
@@ -82,13 +100,13 @@ func (e *PeerConfiger) Init(stub shim.ChaincodeStubInterface) pb.Response {
 // UpdateConfigBlock; otherwise it is the chain id
 // TODO: Improve the scc interface to avoid marshal/unmarshal args
 func (e *PeerConfiger) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	args := stub.GetArgs()
+	args := stub.GetArgs() //获取参数
 
 	if len(args) < 1 {
 		return shim.Error(fmt.Sprintf("Incorrect number of arguments, %d", len(args)))
 	}
 
-	fname := string(args[0])
+	fname := string(args[0])  //函数名，只能是JoinChain, GetConfigBlock 或者 GetChannels
 
 	if fname != GetChannels && len(args) < 2 {
 		return shim.Error(fmt.Sprintf("Incorrect number of arguments, %d", len(args)))
@@ -98,6 +116,8 @@ func (e *PeerConfiger) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	// Handle ACL:
 	// 1. get the signed proposal
+	// GetSignedProposal returns the SignedProposal object, which contains all
+	// data elements part of a transaction proposal.
 	sp, err := stub.GetSignedProposal()
 	if err != nil {
 		return shim.Error(fmt.Sprintf("Failed getting signed proposal from stub: [%s]", err))
@@ -108,18 +128,18 @@ func (e *PeerConfiger) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if args[1] == nil {
 			return shim.Error("Cannot join the channel <nil> configuration block provided")
 		}
-
+// GetBlockFromBlockBytes marshals the bytes into Block
 		block, err := utils.GetBlockFromBlockBytes(args[1])
 		if err != nil {
 			return shim.Error(fmt.Sprintf("Failed to reconstruct the genesis block, %s", err))
 		}
-
+// GetChainIDFromBlock returns chain ID in the block
 		cid, err := utils.GetChainIDFromBlock(block)
 		if err != nil {
 			return shim.Error(fmt.Sprintf("\"JoinChain\" request failed to extract "+
 				"channel id from the block due to [%s]", err))
 		}
-
+// validateConfigBlock validate configuration block to see whenever it's contains valid config transaction
 		if err := validateConfigBlock(block); err != nil {
 			return shim.Error(fmt.Sprintf("\"JoinChain\" for chainID = %s failed because of validation "+
 				"of configuration block, because of %s", cid, err))
@@ -143,7 +163,7 @@ func (e *PeerConfiger) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err = e.policyChecker.CheckPolicyNoChannel(mgmt.Members, sp); err != nil {
 			return shim.Error(fmt.Sprintf("\"GetChannels\" request failed authorization check: [%s]", err))
 		}
-
+// getChannels returns information about all channels for this peer
 		return getChannels()
 
 	}
@@ -152,6 +172,7 @@ func (e *PeerConfiger) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 // validateConfigBlock validate configuration block to see whenever it's contains valid config transaction
 func validateConfigBlock(block *common.Block) error {
+	// ExtractEnvelope retrieves the requested envelope from a given block and unmarshals it.
 	envelopeConfig, err := utils.ExtractEnvelope(block, 0)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed to %s", err))
@@ -192,7 +213,7 @@ func joinChain(chainID string, block *common.Block) pb.Response {
 		return shim.Error(err.Error())
 	}
 
-	peer.InitChain(chainID)
+	peer.InitChain(chainID)//初始化链
 
 	if err := producer.SendProducerBlockEvent(block); err != nil {
 		cnflogger.Errorf("Error sending block event %s", err)

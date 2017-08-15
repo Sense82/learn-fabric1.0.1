@@ -129,6 +129,7 @@ func setModuleLevel(moduleRegExp string, level string, isRegExp bool, revert boo
 // MustGetLogger is used in place of `logging.MustGetLogger` to allow us to
 // store a map of all modules and submodules that have loggers in the system.
 func MustGetLogger(module string) *logging.Logger {
+	// 创建一个名字为module的日志对象l
 	l := logging.MustGetLogger(module)
 	lock.Lock()
 	defer lock.Unlock()

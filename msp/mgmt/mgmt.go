@@ -130,7 +130,7 @@ func GetLocalMSP() msp.MSP {
 	{
 		m.Lock()
 		defer m.Unlock()
-
+// 在defer后指定的函数会在函数退出前调用
 		lclMsp = localMsp
 		if lclMsp == nil {
 			var err error

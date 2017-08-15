@@ -76,6 +76,7 @@ type bccspmsp struct {
 // crypto provider. It handles x.509 certificates and can
 // generate identities and signing identities backed by
 // certificates and keypairs
+//BCCSP区块链加密服务提供者
 func NewBccspMsp() (MSP, error) {
 	mspLogger.Debugf("Creating BCCSP-based MSP instance")
 

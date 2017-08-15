@@ -1,0 +1,4 @@
+http://blog.csdn.net/idsuf698987/article/details/75223986
+fabric的日志系统主要使用了第三方包Go-logging，可在github.com/op/go-logging下载。
+很少一部分使用了go语言标准库中的log。在此基础上fabric自己封装出来了flogging，
+这个f，应该代表fabric吧，意思是说这是fabric的logging。代码集中在fabric/common/flogging目录下，供项目全局使用。
